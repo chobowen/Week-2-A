@@ -1,0 +1,44 @@
+---
+title: "SQL and R – Movie Ratings"
+subtitle: "DATA 607: Week 2 Assignment: Approach"
+date: "September 9, 2026"
+author: "Bowen C"
+format: html
+editor: visual
+---
+
+## Approach
+
+The assignment is to collect ratings for six recent movies and store them in an SQL database. The way I approached this assignment is by fabricating the ratings (and the raters) and building up the required databases within SQL. I justify this approach since the actual ratings and the surveying methodology are not the focus of this assignment. I did, however, take a few liberties with the instructions. Instead of focusing on six movies, I asked my five "raters," based on personas or film-goer types, to rate any six films they might have seen recently. The resulting movie database therefore contains more than six films. The other modification is that the ratings are on a 10-point scale. This was simply a result of the fact that I misread the instructions before I created the databases. Additionally, since my five raters obviously must have seen all six films that they rated, there will be no missing values for ratings. However, I will be sure to include instructions in the code for handling missing values, and I will also implement a secondary rating system using year-to-date box office gross, which does contain missing values for films that haven't been publicly released yet.
+
+## Roadmap
+
+I only covered one week of SQL in an Intro Comp Sci course I took a few years ago. I used W3Schools' [PostgreSQL Tutorial](https://www.w3schools.com/postgresql/index.php) to walk me step-by-step through the process of creating a database and tables in PostgreSQL.
+
+As per the Assignment instructions, I created 3 tables in SQL. One to store rater info ("users"), one to store movie ratings ("movies"), and one to store movie information ("movie_info"). I will then query the database in R and merge tables as necessary. The final goal is to calculate the average rating for each film and export that information back into the movie_info table's avg_rating column in PostgreSQL. The avg_rating column is currently empty.
+
+Now I will make sure I can import the tables from PostgreSQL:
+
+```{r}
+library(RPostgreSQL)
+
+db607 <- dbConnect(
+  RPostgreSQL::PostgreSQL(),
+  dbname = "DATA 607",
+  host = "localhost",
+  user = "postgres",
+  password = ""
+)
+
+movies <- DBI::dbReadTable(db607, "movies")
+users <- DBI::dbReadTable(db607, "users")
+movie_info <- DBI::dbReadTable(db607, "movie_info")
+```
+
+## Code Base
+
+Data Sources:
+
+References:
+
+W3Schools. (no date). PostgreSQL Tutorial. <https://www.w3schools.com/postgresql/index.php>.
