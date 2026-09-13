@@ -1,7 +1,7 @@
 ---
 title: "SQL and R – Movie Ratings"
 subtitle: "DATA 607: Week 2 Assignment: Approach"
-date: "September 9, 2026"
+date: "September 13, 2026"
 author: "Bowen C"
 format: pdf
 editor: visual
