@@ -3,7 +3,7 @@ title: "SQL and R – Movie Ratings"
 subtitle: "DATA 607: Week 2 Assignment: Approach"
 date: "September 9, 2026"
 author: "Bowen C"
-format: html
+format: pdf
 editor: visual
 ---
 
@@ -16,6 +16,8 @@ The assignment is to collect ratings for six recent movies and store them in an 
 I only covered one week of SQL in an Intro Comp Sci course I took a few years ago. I used W3Schools' [PostgreSQL Tutorial](https://www.w3schools.com/postgresql/index.php) to walk me step-by-step through the process of creating a database and tables in PostgreSQL.
 
 As per the Assignment instructions, I created 3 tables in SQL. One to store rater info ("users"), one to store movie ratings ("movies"), and one to store movie information ("movie_info"). I will then query the database in R and merge tables as necessary. The final goal is to calculate the average rating for each film and export that information back into the movie_info table's avg_rating column in PostgreSQL. The avg_rating column is currently empty.
+
+## Code Base
 
 Now I will make sure I can import the tables from PostgreSQL:
 
@@ -37,8 +39,86 @@ movie_info <- DBI::dbReadTable(db607, "movie_info")
 
 ## Code Base
 
-Data Sources:
+First let's merge the `movies` and `users` tables so we can see the names of the people who watched the films instead of just their User IDs. There is no practical reason for me to do this, but it's good coding practice.
 
-References:
+```{r}
+library(tidyverse)
+
+# I accidentally added a zero in front of each User ID in the movies table, while the User IDs in the users table have single digits, so I have to fix that before I can do a left join.
+
+movies <- movies %>%
+  mutate(user_id = as.character(as.integer(user_id)))
+
+movies <- movies %>%
+  left_join(users %>%
+              select(user_id, name), by = "user_id")
+
+movies <- movies %>%
+  select(-user_id)
+```
+
+Now I will find the average rating for each film:
+
+```{r}
+ratings <- movies %>%
+  group_by(movie) %>%
+  summarise(
+    average_rating = mean(rating, na.rm = TRUE),
+    number_ratings = sum(!is.na(rating)))
+```
+
+Now that I have the average ratings per user, I want to "upload" this info into the movie_info dataset.
+
+```{r}
+
+# Convert zeros in ytd_gross to NA so I can handle NA values later:
+# (The NAs are because the films haven't come out yet.)
+movie_info <- movie_info %>%
+  mutate(ytd_gross = na_if(ytd_gross, 0))
+
+movie_info <- movie_info %>%
+  left_join(ratings %>%
+              select(movie, average_rating), by = c("title" = "movie"))
+```
+
+Replace NAs in avg_rating column with values from average_rating column and delete average_rating:
+
+```{r}
+movie_info <- movie_info %>%
+  mutate(avg_rating = average_rating) %>%
+  select(-average_rating)
+```
+
+## Conclusion:
+
+At this point, I would want to actually upload the average rating data to the "live" database on Postgres. However, since we will probably be doing that in a later Assignment, I decided not to try doing that in this Assignment.
+
+Here are the top ten films by average user rating:
+
+```{r}
+top_rated <- movie_info[order(movie_info$avg_rating, decreasing = TRUE), ][1:10, ]
+
+top_rated$rank <- seq_len(nrow(top_rated))
+
+top_rated <- top_rated %>%
+  select(rank, everything())
+
+top_rated
+```
+
+And here are the top ten films by year-to-date box office gross:
+
+```{r}
+top_grossing <- movie_info[order(movie_info$ytd_gross, decreasing = TRUE), ][1:10, ]
+
+top_grossing$rank <- seq_len(nrow(top_grossing))
+
+top_grossing <- top_grossing %>%
+  select(rank, everything())
+
+top_grossing
+```
+
+## References
 
 W3Schools. (no date). PostgreSQL Tutorial. <https://www.w3schools.com/postgresql/index.php>.
